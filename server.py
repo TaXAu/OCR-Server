@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 import pandas as pd
-from typing import Tuple, Dict, Any
+from typing import Tuple, List, Any
 import logging
 import time
 
@@ -44,7 +44,7 @@ class RequestBodyModel(BaseModel):
 
 
 class ResponseModel(BaseModel):
-    data: Dict
+    data: List[List[Any]]
     bbox: Tuple[int, int, int, int]
 
 
@@ -67,9 +67,11 @@ async def api(body: RequestBodyModel):
     result0 = result[0]
     # get html
     raw_html = result0["res"]["html"]
-    frame = pd.read_html(raw_html)
+    frame = pd.read_html(raw_html, header=0, index_col=None)
     frame[0].fillna("", inplace=True)
-    data = frame[0].to_dict()
+    data = frame[0].values.tolist()
+    headers = frame[0].columns.tolist()
+    data = [headers] + data
     return {
         "data": data,
         "bbox": result0["bbox"],
